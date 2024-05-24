@@ -1,0 +1,126 @@
+#!/usr/bin/env python3
+
+"""
+swlist - list software, and apply some filtering to it
+"""
+
+import os
+import subprocess
+from collections import namedtuple
+
+binaries_paths = [
+    "/usr/local/bin",
+    "/usr/bin",
+    # "/bin", # links to /usr/bin
+    "/usr/local/sbin",
+    "/usr/sbin",
+    # "/sbin/",  # links to /usr/sbin
+]
+
+Package = namedtuple(
+    "Package", ["name", "version", "release", "license", "packager", "binaries"]
+)
+
+
+def print_non_rpm_binaries(directory):
+    print(directory)
+
+    # Iterate over all files in the specified directory
+    for root, _, files in os.walk(directory):
+        for file in files:
+            file_path = os.path.join(root, file)
+
+            # Check if the file is part of an RPM package
+            result = subprocess.run(
+                ["rpm", "-qf", file_path],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+
+            # If the file is not part of an RPM package, add it to the list
+            if result.returncode != 0:
+                print("\t" + file)
+
+
+# Define a function that will execute the rpm query and return a structured list of packages.
+def get_rpm_packages():
+    # Run the rpm command with the desired format output
+    result = subprocess.run(
+        [
+            "rpm",
+            "-qa",
+            "--queryformat",
+            "%{NAME}\t%{VERSION}\t%{RELEASE}\t%{LICENSE}\t%{PACKAGER}\n",
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    # Split the output into lines and then by tabs to parse it.
+    package_lines = result.stdout.strip().split("\n")
+
+    # Create a list of Package objects with parsed information.
+    packages = [Package(*info.rsplit("\t", 4), []) for info in package_lines]
+
+    return packages
+
+
+# defines rule based whitelist
+def is_rpm_whitelisted(p: Package):
+    if "Fedora Project" == p.packager:
+        return True
+    if "gpg-pubkey" == p.name:
+        return True
+
+    # find out if the package has any binaries installed
+    result = subprocess.run(["rpm", "-ql", p.name], capture_output=True, text=True)
+    filepaths = result.stdout.strip().split("\n")
+
+    for path in filepaths:
+        if any(path.startswith(common_dir) for common_dir in binaries_paths):
+            p.binaries.append(path)
+
+    if len(p.binaries) == 0:
+        return True
+
+    return False
+
+
+def show_header(what):
+    print(f"{NL}{BLUE}--- {what} ---{ENDC}")
+
+
+def show_output(app, cmd):
+    show_header(app)
+    try:
+        result = subprocess.run(
+            cmd,
+            text=True,
+        )
+    except Exception as e:
+        print(f"{RED}error: {e}{ENDC}")
+
+
+if __name__ == "__main__":
+    packages = get_rpm_packages()
+    NL = "\n"
+    BLUE = "\x1b[38;5;4m"
+    BOLD = "\033[1m"
+    RED = "\x1b[38;5;1m"
+    ENDC = "\033[0m"
+
+    print(f"{NL}{BLUE}--- non-default RPM packages ---{ENDC}")
+    for package in packages:
+        if not is_rpm_whitelisted(package):
+            print(
+                f"{package.name:40}{package.packager:65}{package.version:16}{package.license}"
+            )
+
+    show_output("snap", ["snap", "list"])
+    show_output("flatpak", ["flatpak", "list", "--app"])
+    show_output("cargo", ["cargo", "install", "--list"])
+    show_output("docker", ["docker", "image", "ls"])
+
+    show_header("binaries not in RPM (slow, this can take a while)")
+    for directory in binaries_paths:
+        print_non_rpm_binaries(directory)
