@@ -19,6 +19,13 @@ binaries_paths = [
     os.getenv("HOME") + "/.local/bin",
 ]
 
+NL = "\n"
+BLUE = "\x1b[38;5;4m"
+BOLD = "\033[1m"
+RED = "\x1b[38;5;1m"
+ENDC = "\033[0m"
+
+
 Package = namedtuple(
     "Package", ["name", "version", "release", "license", "packager", "binaries"]
 )
@@ -48,7 +55,7 @@ def print_non_rpm_binaries(directory):
 
     # filter out None values
     for f in sorted(list(filter(None, results))):
-        print("\t" + f)
+        print("\t" + os.path.basename(f))
 
 
 # Define a function that will execute the rpm query and return a structured list of packages.
@@ -112,13 +119,10 @@ def show_output(app, cmd):
 
 if __name__ == "__main__":
     packages = get_rpm_packages()
-    NL = "\n"
-    BLUE = "\x1b[38;5;4m"
-    BOLD = "\033[1m"
-    RED = "\x1b[38;5;1m"
-    ENDC = "\033[0m"
 
-    print(f"{NL}{BLUE}--- non-default RPM packages ---{ENDC}")
+    show_header("non-default RPM packages")
+    print(f"{BOLD}{'Name':40}{'Packager':65}{'Version':16}{'License'}{ENDC}")
+
     for package in packages:
         if not is_rpm_whitelisted(package):
             print(
