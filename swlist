@@ -9,13 +9,14 @@ import os
 import subprocess
 from collections import namedtuple
 
+# "/bin" links to /usr/bin
+# "/sbin/" links to /usr/sbin
 binaries_paths = [
     "/usr/local/bin",
     "/usr/bin",
-    # "/bin", # links to /usr/bin
     "/usr/local/sbin",
     "/usr/sbin",
-    # "/sbin/",  # links to /usr/sbin
+    os.getenv("HOME") + "/.local/bin",
 ]
 
 Package = namedtuple(
@@ -40,11 +41,7 @@ def print_non_rpm_binaries(directory):
     print(directory)
 
     # collect all files
-    file_paths = []
-    for root, _, files in os.walk(directory):
-        for file in files:
-            file_path = os.path.join(root, file)
-            file_paths.append(file_path)
+    file_paths = [file.path for file in os.scandir(directory) if file.is_file()]
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = list(executor.map(worker_is_from_rpm, file_paths))
