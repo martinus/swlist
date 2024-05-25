@@ -129,6 +129,7 @@ if __name__ == "__main__":
     show_output("flatpak", ["flatpak", "list", "--app"])
     show_output("cargo", ["cargo", "install", "--list"])
     show_output("docker", ["docker", "image", "ls"])
+    show_output("/opt", ["tree", "-L", "2", "/opt"])
 
     show_header("binaries not in RPM (slow, this can take a while)")
     for directory in binaries_paths:
