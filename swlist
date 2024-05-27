@@ -3,7 +3,7 @@
 """
 swlist - list software, and apply some filtering to it
 """
-__version_info__ = ("1", "0", "1")
+__version_info__ = ("1", "1", "0")
 __version__ = ".".join(__version_info__)
 
 import concurrent.futures
@@ -23,6 +23,7 @@ binaries_paths = [
 ]
 
 NL = "\n"
+GREEN = "\x1b[38;5;2m"
 BLUE = "\x1b[38;5;4m"
 BOLD = "\033[1m"
 RED = "\x1b[38;5;1m"
@@ -106,7 +107,7 @@ def is_rpm_whitelisted(p: Package):
 
 
 def show_header(what):
-    print(f"{NL}{BLUE}--- {what} ---{ENDC}")
+    print(f"{NL}{GREEN}--- {what} ---{ENDC}")
 
 
 def show_output(app, cmd):
@@ -121,14 +122,11 @@ def show_output(app, cmd):
 
 
 if __name__ == "__main__":
-    show_output("System Name", ["uname", "-a"])
-    print(f"Generated {datetime.datetime.now()} with https://github.com/martinus/swlist {__version__}")
-
-    packages = get_rpm_packages()
+    show_output("System Info", ["hostnamectl"])
 
     show_header("non-default RPM packages")
+    packages = get_rpm_packages()
     print(f"{BOLD}{'Name':40}{'Packager':65}{'Version':16}{'License'}{ENDC}")
-
     for package in packages:
         if not is_rpm_whitelisted(package):
             print(
@@ -145,3 +143,8 @@ if __name__ == "__main__":
     show_header("binaries not in RPM (slow, this can take a while)")
     for directory in binaries_paths:
         print_non_rpm_binaries(directory)
+
+    print(
+        "\n"
+        f"Generated {datetime.datetime.now()} with https://github.com/martinus/swlist {__version__}"
+    )

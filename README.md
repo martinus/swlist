@@ -1,4 +1,4 @@
-# swlist - sofware lister
+# swlist - software lister
 
 Produces a list of installed software that doesn't come from system's default packages.
 
@@ -19,4 +19,5 @@ curl -fsSL https://raw.githubusercontent.com/martinus/swlist/main/swlist |python
 * flatpak
 * cargo
 * docker
+* AppImages
 * `/opt`
