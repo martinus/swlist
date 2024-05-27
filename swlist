@@ -3,8 +3,11 @@
 """
 swlist - list software, and apply some filtering to it
 """
+__version_info__ = ("1", "0", "1")
+__version__ = ".".join(__version_info__)
 
 import concurrent.futures
+import datetime
 import os
 import subprocess
 from collections import namedtuple
@@ -118,6 +121,9 @@ def show_output(app, cmd):
 
 
 if __name__ == "__main__":
+    show_output("System Name", ["uname", "-a"])
+    print(f"Generated {datetime.datetime.now()} with https://github.com/martinus/swlist {__version__}")
+
     packages = get_rpm_packages()
 
     show_header("non-default RPM packages")
@@ -133,6 +139,7 @@ if __name__ == "__main__":
     show_output("flatpak", ["flatpak", "list", "--app"])
     show_output("cargo", ["cargo", "install", "--list"])
     show_output("docker", ["docker", "image", "ls"])
+    show_output("AppImages", ["locate", "-r", "\\.AppImage$"])
     show_output("/opt", ["tree", "-L", "2", "/opt"])
 
     show_header("binaries not in RPM (slow, this can take a while)")
